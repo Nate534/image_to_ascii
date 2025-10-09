@@ -1,0 +1,10 @@
+[project]
+name = "image_to_ascii"
+version = "0.1.0"
+dependencies = [
+    "Pillow",
+    "numpy"
+]
+
+[project.scripts]
+image-to-ascii = "src.image_to_ascii.cli:main"
