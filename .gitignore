@@ -1,0 +1,19 @@
+# VS Code
+.vscode/
+
+# Specify
+.specify/
+
+# Specs
+specs/
+
+# Agents
+AGENTS.md
+
+# Pytest
+.pytest_cache/
+__pycache__/
+*.pyc
+
+# Opencode
+.opencode/
