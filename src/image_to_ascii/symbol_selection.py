@@ -3,11 +3,6 @@ from PIL import Image, ImageDraw
 
 chars = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.']
 
-char_features = {}
-
-for char in chars:
-    char_features[char] = get_char_pca(char)
-
 def get_char_pca(char, size=8):
     img = Image.new('L', (size, size), 255)
     draw = ImageDraw.Draw(img)
@@ -19,16 +14,24 @@ def compute_pca_features(image_block):
     flat = image_block.flatten().astype(np.float64)
     mean = np.mean(flat)
     centered = flat - mean
-    cov = np.dot(centered, centered) / (len(centered) - 1)
+    cov = np.outer(centered, centered) / (len(centered) - 1)
     eigenvals, eigenvecs = np.linalg.eig(cov)
     idx = np.argsort(eigenvals)[::-1]
     return eigenvals[idx], eigenvecs[:, idx]
 
+char_features = {}
+for char in chars:
+    char_features[char] = get_char_pca(char)
+
 def select_symbol(block):
     block_flat = block.flatten().astype(np.float64)
+    if len(block_flat) == 1:
+        return chars[0]  # Default for single pixel
     mean = np.mean(block_flat)
     centered = block_flat - mean
-    cov = np.dot(centered, centered) / (len(centered) - 1)
+    if len(centered) <= 1:
+        return chars[0]
+    cov = np.outer(centered, centered) / (len(centered) - 1)
     eigenvals, eigenvecs = np.linalg.eig(cov)
     idx = np.argsort(eigenvals)[::-1]
     block_vals = eigenvals[idx]
