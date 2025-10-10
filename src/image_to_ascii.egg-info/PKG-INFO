@@ -1,3 +1,16 @@
+Metadata-Version: 2.4
+Name: image-to-ascii
+Version: 0.1.0
+Summary: A Python application to convert images to ASCII art using advanced mathematical methods for symbol selection.
+Author-email: Nathan <your.email@example.com>
+License: MIT
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: Pillow
+Requires-Dist: numpy
+Dynamic: license-file
+
 # Image to ASCII Art Converter
 
 A Python application to convert images to ASCII art using advanced mathematical methods for symbol selection.

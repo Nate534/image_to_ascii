@@ -1,10 +1,17 @@
-[project]
-name = "image_to_ascii"
-version = "0.1.0"
-dependencies = [
-    "Pillow",
-    "numpy"
-]
+ [project]
+ name = "image-to-ascii"
+ version = "0.1.0"
+ description = "A Python application to convert images to ASCII art using advanced mathematical methods for symbol selection."
+ authors = [
+     {name = "Nathan", email = "your.email@example.com"}
+ ]
+ license = {text = "MIT"}
+ readme = "README.md"
+ requires-python = ">=3.8"
+ dependencies = [
+     "Pillow",
+     "numpy"
+ ]
 
 [project.scripts]
 image-to-ascii = "src.image_to_ascii.cli:main"

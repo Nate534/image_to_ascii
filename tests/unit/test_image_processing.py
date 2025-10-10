@@ -1,7 +1,7 @@
 import pytest
 from PIL import Image
 import numpy as np
-from src.image_to_ascii.image_processing import load_image, resize_image
+from image_to_ascii.image_processing import load_image, resize_image
 
 def test_load_image():
     img = Image.new('RGB', (10, 10), color='red')

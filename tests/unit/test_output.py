@@ -1,5 +1,5 @@
 import os
-from src.image_to_ascii.output import save_ascii, print_ascii
+from image_to_ascii.output import save_ascii, print_ascii
 
 def test_save_ascii():
     ascii_art = 'test'
