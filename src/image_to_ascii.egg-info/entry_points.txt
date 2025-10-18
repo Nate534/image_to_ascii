@@ -1,2 +1,0 @@
-[console_scripts]
-image-to-ascii = src.image_to_ascii.cli:main

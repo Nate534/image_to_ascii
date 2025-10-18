@@ -1,17 +1,49 @@
- [project]
- name = "image-to-ascii"
- version = "0.1.0"
- description = "A Python application to convert images to ASCII art using advanced mathematical methods for symbol selection."
- authors = [
-     {name = "Nathan", email = "your.email@example.com"}
- ]
- license = {text = "MIT"}
- readme = "README.md"
- requires-python = ">=3.8"
- dependencies = [
-     "Pillow",
-     "numpy"
- ]
+[project]
+name = "image-to-ascii"
+version = "0.1.0"
+description = "Convert images to ASCII art using advanced mathematical methods including PCA-based symbol selection"
+authors = [
+    {name = "Contributors", email = "contributors@example.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "Pillow>=8.0.0",
+    "numpy>=1.20.0"
+]
+keywords = ["ascii", "art", "image", "conversion", "pca", "computer-vision"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+    "Topic :: Scientific/Engineering :: Image Processing"
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/image-to-ascii"
+Repository = "https://github.com/yourusername/image-to-ascii"
+Issues = "https://github.com/yourusername/image-to-ascii/issues"
+Documentation = "https://github.com/yourusername/image-to-ascii/tree/main/docs"
 
 [project.scripts]
 image-to-ascii = "src.image_to_ascii.cli:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0.0",
+    "pytest-cov>=2.0.0",
+    "black>=22.0.0",
+    "flake8>=4.0.0",
+    "mypy>=0.900"
+]
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
