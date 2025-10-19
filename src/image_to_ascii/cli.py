@@ -5,13 +5,19 @@ from .image_processing import load_image
 from .output import save_ascii
 from .implementations.base_converter import convert_image_to_ascii
 from .implementations.cnn_converter import convert_image_to_ascii_cnn
+from .implementations.brightness_converter import convert_image_to_ascii_brightness  # NEW
 
 def main():
     parser = argparse.ArgumentParser(description='Convert image to ASCII art')
     parser.add_argument('--input', required=True, help='Input image file')
     parser.add_argument('--output', required=True, help='Output text file')
     parser.add_argument('--width', type=int, default=80, help='Width of ASCII art')
-    parser.add_argument('--method', choices=['pca', 'cnn'], default='pca', help='ASCII conversion method')
+    parser.add_argument(
+        '--method',
+        choices=['pca', 'cnn', 'brightness'],  # UPDATED
+        default='pca',
+        help='ASCII conversion method'
+    )
     args = parser.parse_args()
 
     try:
@@ -24,6 +30,8 @@ def main():
 
         if args.method == 'cnn':
             ascii_art = convert_image_to_ascii_cnn(img, args.width)
+        elif args.method == 'brightness':  # NEW
+            ascii_art = convert_image_to_ascii_brightness(img, args.width)
         else:
             ascii_art = convert_image_to_ascii(img, args.width)
 
