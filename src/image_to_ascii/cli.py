@@ -1,11 +1,12 @@
 import argparse
 import sys
-from .image_processing import load_image
-from .ascii_conversion import image_to_ascii
-from .output import save_ascii
 import os
+from .image_processing import load_image
+from .output import save_ascii
 from .implementations.base_converter import convert_image_to_ascii
+from .implementations.cnn_converter import convert_image_to_ascii_cnn
 import time
+
 ALLOWED_EXT=["jpeg","jpg","png","webp"]
 
 def print_green(data,end="\n",file=sys.stdout):
@@ -15,20 +16,17 @@ def print_red(data,end="\n",file=sys.stdout):
     print(f"\033[91m{data}\033[00m",end=end,file=file)
 
 def multi_batch(dir,width):
-   
     output_dir = 'ascii/'
     lsdir=os.listdir(dir)
     dir_len=len(lsdir)
-    
     os.system("clear")
     begin_timestamp=time.perf_counter()
+    
     for index,img_path in enumerate(lsdir):
-
         image_name=img_path.split(".")[0]
         extension=img_path.split(".")[-1]
 
         if extension in ALLOWED_EXT:
-
             full_image_path = os.path.join(dir, img_path)
             img = load_image(full_image_path)
             ascii_art = convert_image_to_ascii(img, width)
@@ -36,6 +34,7 @@ def multi_batch(dir,width):
             os.makedirs(output_dir, exist_ok=True)
             save_ascii(ascii_art, output_path)
             print_green(f'[{index+1}/{dir_len}] ASCII art saved to {output_path}')
+            
     end_timestamp=time.perf_counter()
     delta=(end_timestamp-begin_timestamp)
     delta= f"{delta:.2f}s" if delta>1 else f"{(delta*1000):.2f}ms"
@@ -45,14 +44,11 @@ def multi_batch(dir,width):
 
 def single_process(input,output,width):
     input_path = 'images/' + input 
-    
     output_dir = 'ascii/'
     extension=input.split(".")[-1]
-
     begin_timestamp=time.perf_counter()
 
     if extension in ALLOWED_EXT:
-
         output_path = os.path.join(output_dir, output)
         os.makedirs(output_dir, exist_ok=True)
 
@@ -75,11 +71,23 @@ def main():
     input_group.add_argument('--dir', help='Input folder path containing images')
     parser.add_argument('--output', required=True, help='Output text file')
     parser.add_argument('--width', type=int, default=80, help='Width of ASCII art')
-    
-    
+    parser.add_argument('--method', choices=['pca', 'cnn'], default='pca', help='ASCII conversion method')
     args = parser.parse_args()
-    
+
     try:
+        input_path = os.path.join('images', args.input)
+        output_dir = 'ascii'
+        output_path = os.path.join(output_dir, args.output)
+        os.makedirs(output_dir, exist_ok=True)
+
+        img = load_image(input_path)
+
+        if args.method == 'cnn':
+            ascii_art = convert_image_to_ascii_cnn(img, args.width)
+        else:
+            ascii_art = convert_image_to_ascii(img, args.width)
+
+        save_ascii(ascii_art, output_path)
         if args.input:
             single_process(args.input,args.output,args.width)
         elif args.dir:
