@@ -3,6 +3,8 @@ import sys
 from .image_processing import load_image
 from .ascii_conversion import image_to_ascii
 from .output import save_ascii
+import os
+from .implementations.base_converter import convert_image_to_ascii
 
 def main():
     parser = argparse.ArgumentParser(description='Convert image to ASCII art')
@@ -13,9 +15,13 @@ def main():
     
     try:
         input_path = 'images/' + args.input
-        output_path = 'ascii/' + args.output
+        
+        output_dir = 'ascii/'
+        output_path = os.path.join(output_dir, args.output)
+        os.makedirs(output_dir, exist_ok=True)
+
         img = load_image(input_path)
-        ascii_art = image_to_ascii(img, args.width)
+        ascii_art = convert_image_to_ascii(img, args.width)
         save_ascii(ascii_art, output_path)
         print(f'ASCII art saved to {output_path}')
     except Exception as e:
