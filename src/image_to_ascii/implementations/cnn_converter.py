@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 import torch
 from ..ascii_symbols import chars
-from ..models.cnn_model import load_model
+from .models.cnn_model import load_model
 
 PATCH_SIZE = 8  
 
