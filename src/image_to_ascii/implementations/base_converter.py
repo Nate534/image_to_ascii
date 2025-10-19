@@ -16,6 +16,7 @@ Example usage:
 import numpy as np
 from PIL import Image, ImageDraw
 from ..models.ascii_symbols import chars
+from .brightness_converter import convert_image_to_ascii_brightness
 
 def get_char_pca(char, size=8):
     img = Image.new('L', (size, size), 255)
