@@ -56,31 +56,28 @@ def convert_image_to_ascii(img: Image.Image, width: int) -> str:
     # Resize image maintaining aspect ratio
     aspect = img.height / img.width
     height = int(width * aspect / 2)
-
     img = img.resize((width, height))
     edge_layer=img.copy()
-    edge_layer.filter(ImageFilter.BLUR())
+    edge_layer=edge_layer.filter(ImageFilter.EDGE_ENHANCE_MORE)
     # Convert to numpy array
-    
     pixels = np.array(img)
-    pixelated_edge=np.array(edge_layer)
+    pixelated_edge=np.array(edge_layer,dtype=np.float32)
 
     edges,dir=pixel_gradient(pixelated_edge)
-    threshold=np.percentile(edges,90)
+    threshold=np.percentile(edges,80)
+   
     # Example: Simple brightness mapping (replace with your algorithm)
     ascii_lines = []
     for y in range(height):
         line = []
         for x in range(width):
             brightness = pixels[y, x]
-            
             if edges[y,x]>threshold:
-                #char_index = int((edges[y,x] / 255.0) * (len(edge) - 1))
                 line.append(dir[y,x])
             else:
                 char_index = int((brightness / 255.0) * (len(chars) - 1))
                 line.append(chars[char_index])
-                #line.append("1")
+               
 
         ascii_lines.append(''.join(line))
     
@@ -98,7 +95,7 @@ def pixel_gradient(pixelated:np.ndarray):
     empty_x=np.zeros_like(pixelated)
     empty_y=np.zeros_like(pixelated)
     edges=np.zeros_like(pixelated)
-    direction=np.zeros_like(pixelated)
+    direction=np.zeros_like(pixelated,dtype=str)
 
     for x in range(rows):
         for y in range(cols):
@@ -113,16 +110,17 @@ def pixel_gradient(pixelated:np.ndarray):
 
     return edge_layer,direction
 def edge_direction(x,y):
-    tanratio=np.arctan2(x,y)
+    tanratio=np.arctan2(y,x)
     degree=np.degrees(tanratio)%180
     if 0<=degree<45:
         return "-" 
     elif 45<=degree<90:
-        return "\\"
+        return "/"
+        
     elif 90<=degree<135:
         return "|"
     elif 135<=degree<180:
-        return "/"
+        return "\\"
 
 
 
@@ -168,7 +166,7 @@ def select_symbol(block):
             best_char = char
     return best_char
 
-def convert_image_to_ascii(img, width):
+def convert_image_to_ascii2(img, width):
     aspect = img.height / img.width
     height = int(width * aspect / 2)
     img_resized = img.resize((width, height)).convert('L')
