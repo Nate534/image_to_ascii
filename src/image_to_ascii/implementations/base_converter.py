@@ -52,7 +52,7 @@ def convert_image_to_ascii(img: Image.Image, width: int) -> str:
     """
     # Your implementation goes here
     chars = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.', ' ']
-    edge =  ['@', '#', 'X', '*'] 
+    
     # Resize image maintaining aspect ratio
     aspect = img.height / img.width
     height = int(width * aspect / 2)
@@ -65,7 +65,7 @@ def convert_image_to_ascii(img: Image.Image, width: int) -> str:
     pixels = np.array(img)
     pixelated_edge=np.array(edge_layer)
 
-    edges=pixel_gradient(pixelated_edge)
+    edges,dir=pixel_gradient(pixelated_edge)
     threshold=np.percentile(edges,90)
     # Example: Simple brightness mapping (replace with your algorithm)
     ascii_lines = []
@@ -75,8 +75,8 @@ def convert_image_to_ascii(img: Image.Image, width: int) -> str:
             brightness = pixels[y, x]
             
             if edges[y,x]>threshold:
-                char_index = int((edges[y,x] / 255.0) * (len(edge) - 1))
-                line.append("=")
+                #char_index = int((edges[y,x] / 255.0) * (len(edge) - 1))
+                line.append(dir[y,x])
             else:
                 char_index = int((brightness / 255.0) * (len(chars) - 1))
                 line.append(chars[char_index])
@@ -87,7 +87,7 @@ def convert_image_to_ascii(img: Image.Image, width: int) -> str:
     return '\n'.join(ascii_lines)
 
 
-def pixel_gradient(pixelated:np.ndarray)->np.ndarray:
+def pixel_gradient(pixelated:np.ndarray):
     gx=np.array([[-1,0,1],[-2,0,2],[-1,0,1]])
     gy=np.array([[-1,-2,-1],[0,0,0],[1,2,1]])
     
@@ -105,12 +105,25 @@ def pixel_gradient(pixelated:np.ndarray)->np.ndarray:
             section=image_pad[x:x+3,y:y+3]
             empty_x[x,y] = np.sum(section * gx)
             empty_y[x,y] = np.sum(section * gy)
-            if empty_x[x,y]> 
+            direction[x,y]=edge_direction(empty_x[x,y],empty_y[x,y])
+
             edges[x,y] = np.sqrt(empty_x[x,y]**2 + empty_y[x,y]**2)
 
     edge_layer=(edges/edges.max()*255).astype(np.uint8)
 
-    return edge_layer
+    return edge_layer,direction
+def edge_direction(x,y):
+    tanratio=np.arctan2(x,y)
+    degree=np.degrees(tanratio)%180
+    if 0<=degree<45:
+        return "-" 
+    elif 45<=degree<90:
+        return "\\"
+    elif 90<=degree<135:
+        return "|"
+    elif 135<=degree<180:
+        return "/"
+
 
 
 
@@ -166,3 +179,8 @@ def convert_image_to_ascii(img, width):
         row = ''.join(select_symbol(pixels[y:y+1, x:x+1]) for x in range(width))
         ascii_art.append(row)
     return '\n'.join(ascii_art)
+
+from ..image_processing import load_image
+if __name__ == "__main__":
+    img=load_image("/images/skull.jpeg")
+    convert_image_to_ascii(img,80)

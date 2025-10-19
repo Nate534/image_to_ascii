@@ -5,6 +5,7 @@ from .image_processing import load_image
 from .output import save_ascii
 from .implementations.base_converter import convert_image_to_ascii
 from .implementations.cnn_converter import convert_image_to_ascii_cnn
+
 import time
 
 ALLOWED_EXT=["jpeg","jpg","png","webp"]

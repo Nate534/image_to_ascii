@@ -3,14 +3,16 @@ name = "image-to-ascii"
 version = "0.1.0"
 description = "Convert images to ASCII art using advanced mathematical methods including PCA-based symbol selection"
 authors = [
-    {name = "Contributors", email = "contributors@example.com"}
+    {name = "Contributors", email = "contributors@example.com"},
+    {name = "Guysa", email = "moosathejoker@gmail.com"}
 ]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
     "Pillow>=8.0.0",
-    "numpy>=1.20.0"
+    "numpy>=1.20.0",
+    "torch>=2.5.1",
 ]
 keywords = ["ascii", "art", "image", "conversion", "pca", "computer-vision"]
 classifiers = [
