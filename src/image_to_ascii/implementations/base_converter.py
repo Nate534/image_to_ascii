@@ -166,6 +166,8 @@ def select_symbol(block):
             best_char = char
     return best_char
 
+
+#this method conflicts with the one above so i just suffixed it with a #2
 def convert_image_to_ascii2(img, width):
     aspect = img.height / img.width
     height = int(width * aspect / 2)
@@ -178,7 +180,3 @@ def convert_image_to_ascii2(img, width):
         ascii_art.append(row)
     return '\n'.join(ascii_art)
 
-from ..image_processing import load_image
-if __name__ == "__main__":
-    img=load_image("/images/skull.jpeg")
-    convert_image_to_ascii(img,80)
