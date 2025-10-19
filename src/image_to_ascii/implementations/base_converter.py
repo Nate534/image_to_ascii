@@ -14,7 +14,8 @@ Example usage:
 """
 
 import numpy as np
-from PIL import Image,ImageFilter
+from PIL import Image,ImageFilter,ImageDraw
+from ..models.ascii_symbols import chars
 
 
 def get_char_pca(char, size=8):
@@ -104,7 +105,7 @@ def pixel_gradient(pixelated:np.ndarray)->np.ndarray:
             section=image_pad[x:x+3,y:y+3]
             empty_x[x,y] = np.sum(section * gx)
             empty_y[x,y] = np.sum(section * gy)
-            if empty_x[x,y]>
+            if empty_x[x,y]> 
             edges[x,y] = np.sqrt(empty_x[x,y]**2 + empty_y[x,y]**2)
 
     edge_layer=(edges/edges.max()*255).astype(np.uint8)
