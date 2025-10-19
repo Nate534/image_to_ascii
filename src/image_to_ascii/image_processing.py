@@ -8,3 +8,6 @@ def resize_image(img, width):
     aspect = img.height / img.width
     height = int(width * aspect / 2)
     return img.resize((width, height))
+
+def batch_processing():
+    pass
