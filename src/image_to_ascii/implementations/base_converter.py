@@ -15,7 +15,7 @@ Example usage:
 
 import numpy as np
 from PIL import Image, ImageDraw
-from ..ascii_symbols import chars
+from ..models.ascii_symbols import chars
 
 def get_char_pca(char, size=8):
     img = Image.new('L', (size, size), 255)
