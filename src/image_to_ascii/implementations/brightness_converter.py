@@ -1,50 +1,59 @@
 """
 Brightness-based ASCII converter
-Maps pixel brightness (0–255) to ASCII characters using a simple linear scale.
-Automatically rescales image brightness so the full ASCII range is used.
-Handles uniform black or white images correctly.
+Maps pixel brightness (0–255) to ASCII characters using linear interpolation.
+Characters ordered from darkest to lightest: ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.', ' ']
+This version resizes the image to the target width while maintaining aspect ratio.
 """
 
 import numpy as np
 from PIL import Image
-from ..models.ascii_symbols import chars  
 
-# ASCII character set (dark → light)
 chars = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.', ' ']
 
-def convert_image_to_ascii_brightness(img, width):
+def convert_image_to_ascii_brightness(img: Image.Image, width: int) -> str:
     """
-    Convert a PIL image to ASCII art using brightness mapping.
+    Convert a PIL image to ASCII art using pixel brightness.
 
     Args:
-        img: PIL.Image object
-        width: target width of ASCII art
+        img (PIL.Image): Input image.
+        width (int): Target ASCII width.
 
     Returns:
-        str: ASCII art as a single string
+        str: ASCII art string.
     """
-    aspect = img.height / img.width
-    height = int(width * aspect / 2)  # divide by 2 for character height
-    img_resized = img.resize((width, height)).convert('L')
+    gray = img.convert("L")
 
-    pixels = np.array(img_resized, dtype=float)
+    aspect_ratio = gray.height / gray.width
+    new_height = max(1, round(width * aspect_ratio * 0.55))
+    
+    # Resize the image
+    resized = gray.resize((width, new_height))
+
+    pixels = np.array(resized, dtype=float)
 
     min_px, max_px = pixels.min(), pixels.max()
-    if max_px > min_px:
+    if max_px != min_px:
         pixels = (pixels - min_px) / (max_px - min_px) * 255
     else:
-        # all pixels same: map to lightest or darkest char
-        if min_px == 255:
-            pixels = np.full_like(pixels, 255)  # all white
-        else:
-            pixels = np.zeros_like(pixels)      # all black
+        pixels.fill(max_px)  # uniform image
 
-    ascii_art = []
-    for row in pixels:
-        line = ""
-        for px in row:
-            idx = round((px / 255) * (len(chars) - 1))
-            line += chars[idx]
-        ascii_art.append(line)
+    # Map pixels to ASCII characters
+    scale = len(chars) - 1
+    ascii_lines = [
+        ''.join(chars[int(px / 255 * scale)] for px in row)
+        for row in pixels
+    ]
 
-    return "\n".join(ascii_art)
+    return "\n".join(ascii_lines)
+
+
+# --- inline test ---
+if __name__ == "__main__":
+    # from PIL import ImageDraw
+
+    # img = Image.new("L", (100, 100), 0)
+    # draw = ImageDraw.Draw(img)
+    # draw.rectangle([10, 10, 90, 90], fill=255)
+
+    # ascii_output = convert_image_to_ascii_brightness(img, width=50)
+    # print(ascii_output)
