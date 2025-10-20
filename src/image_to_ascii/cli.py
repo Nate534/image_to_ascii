@@ -5,7 +5,7 @@ from .image_processing import load_image
 from .output import save_ascii
 from .implementations.base_converter import convert_image_to_ascii
 from .implementations.cnn_converter import convert_image_to_ascii_cnn
-
+from .implementations.edged_converter import convert_image_to_ascii as citae
 import time
 
 ALLOWED_EXT=["jpeg","jpg","png","webp"]
@@ -16,7 +16,7 @@ def print_green(data,end="\n",file=sys.stdout):
 def print_red(data,end="\n",file=sys.stdout):
     print(f"\033[91m{data}\033[00m",end=end,file=file)
 
-def multi_batch(dir,width):
+def multi_batch(dir,width,func):
     output_dir = 'ascii/'
     lsdir=os.listdir(dir)
     dir_len=len(lsdir)
@@ -30,7 +30,7 @@ def multi_batch(dir,width):
         if extension in ALLOWED_EXT:
             full_image_path = os.path.join(dir, img_path)
             img = load_image(full_image_path)
-            ascii_art = convert_image_to_ascii(img, width)
+            ascii_art = func(img, width)
             output_path= os.path.join(output_dir, image_name+".txt")
             os.makedirs(output_dir, exist_ok=True)
             save_ascii(ascii_art, output_path)
@@ -43,7 +43,7 @@ def multi_batch(dir,width):
     print(f" taken to process {dir_len} images")
 
 
-def single_process(input,output,width):
+def single_process(input,output,width,func):
     input_path = 'images/' + input 
     output_dir = 'ascii/'
     extension=input.split(".")[-1]
@@ -54,7 +54,7 @@ def single_process(input,output,width):
         os.makedirs(output_dir, exist_ok=True)
 
         img = load_image(input_path)
-        ascii_art = convert_image_to_ascii(img, width)
+        ascii_art = func(img, width)
         save_ascii(ascii_art, output_path)
         print_green(f'ASCII art saved to {output_path}')
 
@@ -72,6 +72,7 @@ def main():
     input_group.add_argument('--dir', help='Input folder path containing images')
     parser.add_argument('--output', required=True, help='Output text file')
     parser.add_argument('--width', type=int, default=80, help='Width of ASCII art')
+    parser.add_argument("--outlined",type=int,default=0,choices=[1,0],help="draws an edge contour around the image")
     parser.add_argument('--method', choices=['pca', 'cnn'], default='pca', help='ASCII conversion method')
     args = parser.parse_args()
 
@@ -87,12 +88,17 @@ def main():
             ascii_art = convert_image_to_ascii_cnn(img, args.width)
         else:
             ascii_art = convert_image_to_ascii(img, args.width)
+    
+        if args.outlined==1:
+            func=citae #renamed convert_image_to_ascii for edge detection
+        else:
+            func=convert_image_to_ascii
 
         save_ascii(ascii_art, output_path)
         if args.input:
-            single_process(args.input,args.output,args.width)
+            single_process(args.input,args.output,args.width,func)
         elif args.dir:
-            multi_batch(args.dir,args.width)
+            multi_batch(args.dir,args.width,func)
 
     except Exception as e:
         print_red(f'Error: {e}', file=sys.stderr)
