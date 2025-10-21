@@ -17,7 +17,7 @@ def convert_image_to_ascii(img: Image.Image, width: int) -> str:
     pixelated_edge=np.array(edge_layer,dtype=np.float32)
 
     edges,dir=pixel_gradient(pixelated_edge)
-    threshold=np.percentile(edges,85)
+    threshold=np.percentile(edges,70)
     ascii_lines = []
     for y in range(height):
         line = []
