@@ -3,7 +3,7 @@ import sys
 import os
 from .image_processing import load_image
 from .output import save_ascii
-from .implementations.base_converter import convert_image_to_ascii2
+from .implementations.base_converter import convert_image_to_ascii
 from .implementations.cnn_converter import convert_image_to_ascii_cnn
 from .implementations.edged_converter import convert_image_to_ascii as citae
 import time
@@ -91,7 +91,7 @@ def main():
             func=citae #renamed convert_image_to_ascii for edge detection
         else:
             #ascii_art = convert_image_to_ascii(img, args.width)
-            func=convert_image_to_ascii2
+            func=convert_image_to_ascii
     
         
         #save_ascii(ascii_art, output_path)
