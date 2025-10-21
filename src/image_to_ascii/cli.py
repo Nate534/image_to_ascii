@@ -2,13 +2,18 @@ import argparse
 import sys
 import os
 import time
+import webbrowser
+from pathlib import Path
+from PIL import Image, ImageOps
 from .image_processing import load_image
 from .output import save_ascii
-from .implementations.base_converter import convert_image_to_ascii
+from .implementations.base_converter import convert_image_to_ascii, convert_image_to_ascii_old
 from .implementations.cnn_converter import convert_image_to_ascii_cnn
-from .implementations.brightness_converter import convert_image_to_ascii_brightness
+from .web_view import generate_gallery_html
 
-ALLOWED_EXT = ["jpeg", "jpg", "png", "webp"]
+ALLOWED_EXT=["jpeg","jpg","png","webp"]
+THUMBS_DIRNAME = "thumbnails"
+ASCII_DIRNAME = "ascii"
 
 def print_green(data, end="\n", file=sys.stdout):
     print(f"\033[92m{data}\033[00m", end=end, file=file)
@@ -16,97 +21,182 @@ def print_green(data, end="\n", file=sys.stdout):
 def print_red(data, end="\n", file=sys.stderr):
     print(f"\033[91m{data}\033[00m", end=end, file=file)
 
-def multi_batch(dir_path, width, method="pca", dithering="none"):
-    output_dir = 'ascii/'
-    lsdir = os.listdir(dir_path)
-    dir_len = len(lsdir)
-    os.system("clear")
-    begin_timestamp = time.perf_counter()
+def safe_filename(st: str):
+    return "".join(c if c.isalnum() or c in "._-" else "_" for c in st)
 
-    for index, img_path in enumerate(lsdir):
-        image_name = os.path.splitext(img_path)[0]
-        extension = img_path.split(".")[-1].lower()
+def make_thumbnail(img_path: str, thumb_path: str, max_size=(240, 240)):
+    with Image.open(img_path) as im:
+        im = ImageOps.exif_transpose(im)
+        im.thumbnail(max_size, Image.LANCZOS)
+        rgb = im.convert("RGB")
+        rgb.save(thumb_path, format="JPEG", quality=85)
 
-        if extension in ALLOWED_EXT:
-            full_image_path = os.path.join(dir_path, img_path)
-            img = load_image(full_image_path)
+def human_time(seconds: float):
+    if seconds < 1.0:
+        return f"{seconds*1000:.0f}ms"
+    return f"{seconds:.2f}s"
 
-            if method == 'cnn':
+def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca"):
+    dir_path = Path(dir_path)
+    if not dir_path.is_dir():
+        print_red(f"Input directory not found: {dir_path}")
+        return
+
+    output_dir = Path(output_dir)
+    ascii_out = output_dir / ASCII_DIRNAME
+    thumbs_out = output_dir / THUMBS_DIRNAME
+    ascii_out.mkdir(parents=True, exist_ok=True)
+    thumbs_out.mkdir(parents=True, exist_ok=True)
+
+    entries = sorted(dir_path.iterdir())
+    processed = 0
+    begin_ts = time.perf_counter()
+    gallery_items = []
+
+    for entry in entries:
+        if not entry.is_file():
+            continue
+        ext = entry.suffix.lower().lstrip(".")
+        if ext not in ALLOWED_EXT:
+            continue
+
+        try:
+            start = time.perf_counter()
+            img = load_image(str(entry))
+            if method == "cnn":
                 ascii_art = convert_image_to_ascii_cnn(img, width)
-            elif method == 'brightness':
-                ascii_art = convert_image_to_ascii_brightness(img, width, dithering=dithering)
             else:
-                ascii_art = convert_image_to_ascii(img, width, dithering=dithering)
+                ascii_art = convert_image_to_ascii_old(img, width)
+            # derive ascii dims
+            lines = ascii_art.splitlines()
+            aw = len(lines[0]) if lines else 0
+            ah = len(lines)
+            proc_time = human_time(time.perf_counter() - start)
 
-            output_path = os.path.join(output_dir, image_name + ".txt")
-            os.makedirs(output_dir, exist_ok=True)
-            save_ascii(ascii_art, output_path)
-            print_green(f'[{index+1}/{dir_len}] ASCII art saved to {output_path}')
+            out_name = entry.stem + ".txt"
+            out_path = ascii_out / out_name
+            save_ascii(ascii_art, str(out_path))
 
-    end_timestamp = time.perf_counter()
-    delta = end_timestamp - begin_timestamp
-    delta = f"{delta:.2f}s" if delta > 1 else f"{(delta*1000):.2f}ms"
-    print_green(delta, end="")
-    print(f" taken to process {dir_len} images")
+            # thumbnail
+            thumb_name = safe_filename(entry.stem) + ".jpg"
+            thumb_path = thumbs_out / thumb_name
+            make_thumbnail(str(entry), str(thumb_path))
 
-def single_process(input_file, output_file, width, method="pca", dithering="none"):
-    input_path = input_file  
-    output_dir = 'ascii/'
-    extension = input_file.split(".")[-1].lower()
-    begin_timestamp = time.perf_counter()
+            gallery_items.append({
+                "filename": entry.name,
+                "orig_w": img.width,
+                "orig_h": img.height,
+                "ascii_w": aw,
+                "ascii_h": ah,
+                "proc_time": proc_time,
+                "thumb_rel": os.path.join(THUMBS_DIRNAME, thumb_name),
+                "ascii_rel": os.path.join(ASCII_DIRNAME, out_name),
+                "ascii_text": ascii_art
+            })
 
-    if extension in ALLOWED_EXT:
-        output_path = os.path.join(output_dir, output_file)
-        os.makedirs(output_dir, exist_ok=True)
+            processed += 1
+            print_green(f"[{processed}] ASCII art saved to {out_path}")
+        except Exception as e:
+            print_red(f"Failed: {entry.name} : {e}")
 
-        img = load_image(input_path)
+    end_ts = time.perf_counter()
+    delta = end_ts - begin_ts
+    timing = f"{delta:.2f}s" if delta >= 1 else f"{(delta*1000):.2f}ms"
+    print_green(f"{timing} taken to process {processed} images", end="")
 
-        if method == 'cnn':
+    if web_view:
+        html_path = output_dir / "gallery.html"
+        generate_gallery_html(gallery_items, str(html_path))
+        try:
+            webbrowser.open_new_tab(str(html_path.resolve()))
+            print_green(f"\nOpened gallery at {html_path}")
+        except Exception:
+            print_green(f"\nGallery written to {html_path} (open manually)")
+
+def single_process(input_path, output_path, width, method="pca", web_view=False):
+    input_path = Path(input_path)
+    if not input_path.is_file():
+        print_red(f"Input file not found: {input_path}")
+        return
+
+    ext = input_path.suffix.lower().lstrip(".")
+    if ext not in ALLOWED_EXT:
+        print_red(f"Unsupported file extension: .{ext}")
+        return
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    begin_ts = time.perf_counter()
+    try:
+        img = load_image(str(input_path))
+        if method == "cnn":
             ascii_art = convert_image_to_ascii_cnn(img, width)
-        elif method == 'brightness':
-            ascii_art = convert_image_to_ascii_brightness(img, width, dithering=dithering)
         else:
-            ascii_art = convert_image_to_ascii(img, width, dithering=dithering)
+            ascii_art = convert_image_to_ascii_old(img, width)
+        save_ascii(ascii_art, str(output_path))
+        print_green(f"ASCII art saved to {output_path}")
 
-        save_ascii(ascii_art, output_path)
-        print_green(f'ASCII art saved to {output_path}')
+        if web_view:
+            # Generate gallery HTML for a single image
+            gallery_items = []
+            lines = ascii_art.splitlines()
+            aw = len(lines[0]) if lines else 0
+            ah = len(lines)
+            thumb_name = safe_filename(input_path.stem) + ".jpg"
+            thumb_path = output_path.parent / thumb_name
+            make_thumbnail(str(input_path), str(thumb_path))
 
-    end_timestamp = time.perf_counter()
-    delta = end_timestamp - begin_timestamp
-    delta = f"{delta:.2f}s" if delta > 1 else f"{(delta*1000):.2f}ms"
-    print_green(delta, end="")
-    print(f" taken to process 1 image")
+            gallery_items.append({
+                "filename": input_path.name,
+                "orig_w": img.width,
+                "orig_h": img.height,
+                "ascii_w": aw,
+                "ascii_h": ah,
+                "proc_time": "N/A",
+                "thumb_rel": thumb_name,
+                "ascii_rel": output_path.name,
+                "ascii_text": ascii_art
+            })
+
+            html_path = output_path.parent / "gallery.html"
+            generate_gallery_html(gallery_items, str(html_path))
+            try:
+                webbrowser.open_new_tab(str(html_path.resolve()))
+                print_green(f"\nOpened gallery at {html_path}")
+            except Exception:
+                print_green(f"\nGallery written to {html_path} (open manually)")
+    except Exception as e:
+        print_red(f"Failed to process {input_path.name} : {e}")
+    end_ts = time.perf_counter()
+    delta = end_ts - begin_ts
+    timing = f"{delta:.2f}s" if delta >= 1 else f"{(delta*1000):.2f}ms"
+    print_green(f"{timing} taken to process 1 image", end="")
 
 def main():
     parser = argparse.ArgumentParser(description='Convert image to ASCII art')
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument('--input', help='Input image file')
     input_group.add_argument('--dir', help='Input folder path containing images')
-    parser.add_argument('--output', required=True, help='Output text file')
+    parser.add_argument('--output', help='Output text file')
     parser.add_argument('--width', type=int, default=80, help='Width of ASCII art')
-    parser.add_argument(
-        '--method',
-        choices=['pca', 'cnn', 'brightness'],
-        default='pca',
-        help='ASCII conversion method'
-    )
-    parser.add_argument(
-        '--dithering',
-        choices=['none', 'floyd', 'atkinson'],
-        default='none',
-        help='Dithering method'
-    )
-
+    parser.add_argument('--method', choices=['pca', 'cnn'], default='pca', help='ASCII conversion method')
+    parser.add_argument("--web-view", action="store_true", help="Generate an HTML gallery and open it in a browser after batch processing (only for --dir)")
     args = parser.parse_args()
+
+    # Validate that --output is provided when using --input
+    if args.input and not args.output:
+        parser.error("--output is required when using --input")
 
     try:
         if args.input:
-            single_process(args.input, args.output, args.width, method=args.method, dithering=args.dithering)
+            single_process(args.input, args.output, args.width, method=args.method, web_view=args.web_view)
         elif args.dir:
-            multi_batch(args.dir, args.width, method=args.method, dithering=args.dithering)
+            out_dir = args.output if args.output else ASCII_DIRNAME
+            multi_batch(args.dir, args.width, out_dir, web_view=args.web_view, method=args.method)
     except Exception as e:
-        print_red(f'Error: {e}')
+        print_red(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
