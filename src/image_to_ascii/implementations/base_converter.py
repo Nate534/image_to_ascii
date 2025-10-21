@@ -69,3 +69,23 @@ def convert_image_to_ascii(img, width):
         row = ''.join(select_symbol(pixels[y:y+1, x:x+1]) for x in range(width))
         ascii_art.append(row)
     return '\n'.join(ascii_art)
+
+def convert_image_to_ascii_old(img, width):
+    aspect = img.height / img.width
+    height = int(width * aspect / 2)
+    img = img.resize((width, height))
+
+    # Convert to numpy array
+    pixels = np.array(img)
+
+    # Example: Simple brightness mapping (replace with your algorithm)
+    ascii_lines = []
+    for y in range(height):
+        line = []
+        for x in range(width):
+            brightness = pixels[y, x]
+            char_index = int((brightness / 255.0) * (len(chars) - 1))
+            line.append(chars[char_index])
+        ascii_lines.append(''.join(line))
+
+    return '\n'.join(ascii_lines)
