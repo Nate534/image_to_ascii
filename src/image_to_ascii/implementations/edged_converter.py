@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image,ImageFilter
 
 
-def convert_image_to_ascii(img: Image.Image, width: int) -> str:
+def convert_image_to_ascii_outlined(img: Image.Image, width: int) -> str:
     chars = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.', ' ']
     
     aspect = img.height / img.width
