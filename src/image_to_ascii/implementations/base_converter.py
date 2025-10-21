@@ -178,7 +178,22 @@ def convert_image_to_ascii2(img, width):
         ascii_art.append(row)
     return '\n'.join(ascii_art)
 
-from ..image_processing import load_image
-if __name__ == "__main__":
-    img=load_image("/images/skull.jpeg")
-    convert_image_to_ascii(img,80)
+def convert_image_to_ascii_old(img, width):
+    aspect = img.height / img.width
+    height = int(width * aspect / 2)
+    img = img.resize((width, height))
+
+    # Convert to numpy array
+    pixels = np.array(img)
+
+    # Example: Simple brightness mapping (replace with your algorithm)
+    ascii_lines = []
+    for y in range(height):
+        line = []
+        for x in range(width):
+            brightness = pixels[y, x]
+            char_index = int((brightness / 255.0) * (len(chars) - 1))
+            line.append(chars[char_index])
+        ascii_lines.append(''.join(line))
+
+    return '\n'.join(ascii_lines)
