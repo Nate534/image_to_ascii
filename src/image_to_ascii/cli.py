@@ -7,10 +7,11 @@ from pathlib import Path
 from PIL import Image, ImageOps
 from .image_processing import load_image
 from .output import save_ascii
-from .implementations.base_converter import convert_image_to_ascii, convert_image_to_ascii_old
+from .implementations.base_converter import  convert_image_to_ascii_old
 from .implementations.cnn_converter import convert_image_to_ascii_cnn
+from .implementations.edged_converter import convert_image_to_ascii_outlined
 from .web_view import generate_gallery_html
-
+import time
 ALLOWED_EXT=["jpeg","jpg","png","webp"]
 THUMBS_DIRNAME = "thumbnails"
 ASCII_DIRNAME = "ascii"
@@ -65,8 +66,11 @@ def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca
             img = load_image(str(entry))
             if method == "cnn":
                 ascii_art = convert_image_to_ascii_cnn(img, width)
+            elif method == "edge":
+                ascii_art = convert_image_to_ascii_outlined(img,width)
             else:
                 ascii_art = convert_image_to_ascii_old(img, width)
+            
             # derive ascii dims
             lines = ascii_art.splitlines()
             aw = len(lines[0]) if lines else 0
@@ -180,7 +184,7 @@ def main():
     input_group.add_argument('--dir', help='Input folder path containing images')
     parser.add_argument('--output', help='Output text file')
     parser.add_argument('--width', type=int, default=80, help='Width of ASCII art')
-    parser.add_argument('--method', choices=['pca', 'cnn'], default='pca', help='ASCII conversion method')
+    parser.add_argument('--method', choices=['pca', 'cnn','edge'], default='pca', help='ASCII conversion method')
     parser.add_argument("--web-view", action="store_true", help="Generate an HTML gallery and open it in a browser after batch processing (only for --dir)")
     args = parser.parse_args()
 
