@@ -15,11 +15,11 @@ ALLOWED_EXT=["jpeg","jpg","png","webp"]
 THUMBS_DIRNAME = "thumbnails"
 ASCII_DIRNAME = "ascii"
 
-def print_green(data,end="\n",file=sys.stdout):
-    print(f"\033[92m{data}\033[00m",end=end,file=file)
+def print_green(data, end="\n", file=sys.stdout):
+    print(f"\033[92m{data}\033[00m", end=end, file=file)
 
-def print_red(data,end="\n",file=sys.stdout):
-    print(f"\033[91m{data}\033[00m",end=end,file=file)
+def print_red(data, end="\n", file=sys.stderr):
+    print(f"\033[91m{data}\033[00m", end=end, file=file)
 
 def safe_filename(st: str):
     return "".join(c if c.isalnum() or c in "._-" else "_" for c in st)
@@ -175,7 +175,7 @@ def single_process(input_path, output_path, width, method="pca", web_view=False)
 
 def main():
     parser = argparse.ArgumentParser(description='Convert image to ASCII art')
-    input_group=parser.add_mutually_exclusive_group(required=True)
+    input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument('--input', help='Input image file')
     input_group.add_argument('--dir', help='Input folder path containing images')
     parser.add_argument('--output', help='Output text file')
