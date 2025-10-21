@@ -1,6 +1,6 @@
 from PIL import Image
 from image_to_ascii.implementations.edged_converter import convert_image_to_ascii
-import subprocess
+
 def test_image_to_ascii():
     img = Image.new('L', (80, 40))
     res = convert_image_to_ascii(img, 80)

@@ -3,7 +3,7 @@ import sys
 import os
 from .image_processing import load_image
 from .output import save_ascii
-from .implementations.base_converter import convert_image_to_ascii
+from .implementations.base_converter import convert_image_to_ascii2
 from .implementations.cnn_converter import convert_image_to_ascii_cnn
 from .implementations.edged_converter import convert_image_to_ascii as citae
 import time
@@ -72,8 +72,8 @@ def main():
     input_group.add_argument('--dir', help='Input folder path containing images')
     parser.add_argument('--output', required=True, help='Output text file')
     parser.add_argument('--width', type=int, default=80, help='Width of ASCII art')
-    parser.add_argument("--outlined",type=int,default=0,choices=[1,0],help="draws an edge contour around the image")
-    parser.add_argument('--method', choices=['pca', 'cnn'], default='pca', help='ASCII conversion method')
+  
+    parser.add_argument('--method', choices=['pca', 'cnn',"edge"], default='pca', help='ASCII conversion method')
     args = parser.parse_args()
 
     try:
@@ -85,16 +85,16 @@ def main():
         img = load_image(input_path)
 
         if args.method == 'cnn':
-            ascii_art = convert_image_to_ascii_cnn(img, args.width)
-        else:
-            ascii_art = convert_image_to_ascii(img, args.width)
-    
-        if args.outlined==1:
+            #ascii_art = convert_image_to_ascii_cnn(img, args.width)
+            func=convert_image_to_ascii_cnn
+        elif args.method=="edge":
             func=citae #renamed convert_image_to_ascii for edge detection
         else:
-            func=convert_image_to_ascii
-
-        save_ascii(ascii_art, output_path)
+            #ascii_art = convert_image_to_ascii(img, args.width)
+            func=convert_image_to_ascii2
+    
+        
+        #save_ascii(ascii_art, output_path)
         if args.input:
             single_process(args.input,args.output,args.width,func)
         elif args.dir:

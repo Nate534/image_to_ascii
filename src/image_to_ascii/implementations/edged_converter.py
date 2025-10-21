@@ -19,7 +19,7 @@ def convert_image_to_ascii(img: Image.Image, width: int) -> str:
     pixelated_edge=np.array(edge_layer,dtype=np.float32)
 
     edges,dir=pixel_gradient(pixelated_edge)
-    threshold=np.percentile(edges,80)
+    threshold=np.percentile(edges,85)
    
     # Example: Simple brightness mapping (replace with your algorithm)
     ascii_lines = []
@@ -30,8 +30,8 @@ def convert_image_to_ascii(img: Image.Image, width: int) -> str:
             if edges[y,x]>threshold:
                 line.append(dir[y,x])
             else:
-                char_index = int((brightness / 255.0) * (len(chars) - 1))
-                line.append(chars[char_index])
+                
+                line.append(" ")
                
 
         ascii_lines.append(''.join(line))
@@ -62,17 +62,23 @@ def pixel_gradient(pixelated:np.ndarray):
     edge_layer=(edges/edges.max()*255).astype(np.uint8)
 
     return edge_layer,direction
+
 def edge_direction(x,y):
     tanratio=np.arctan2(y,x)
     degree=np.degrees(tanratio)%180
     if 0<=degree<45:
-        return "-" 
+        return "|"
+        
     elif 45<=degree<90:
         return "/"
         
     elif 90<=degree<135:
-        return "|"
+        return "-" 
     elif 135<=degree<180:
         return "\\"
+    
+def line_variation(x,y):
+    ["j","l","|","i","!",":",";","/","",".","-","="]
+    
 
     
