@@ -137,11 +137,15 @@ def single_process(input_path, output_path, width, mode:Filter,method="pca",web_
     begin_ts = time.perf_counter()
     try:
         img = load_image(str(input_path),mode)
-        
+       
         if method == "cnn":
             ascii_art = convert_image_to_ascii_cnn(img, width)
+
+        elif method=="edge":
+            ascii_art = convert_image_to_ascii_outlined(img,width)
         else:
             ascii_art = convert_image_to_ascii_old(img, width)
+        
         save_ascii(ascii_art, str(output_path))
         print_green(f"ASCII art saved to {output_path}")
 
@@ -190,7 +194,7 @@ def main():
     parser.add_argument('--width', type=int, default=80, help='Width of ASCII art')
     parser.add_argument('--method', choices=['pca', 'cnn','edge'], default='pca', help='ASCII conversion method')
     parser.add_argument("--web-view", action="store_true", help="Generate an HTML gallery and open it in a browser after batch processing (only for --dir)")
-    parser.add_argument("--mode",choices=[choice.name for choice in Filter],default=Filter.AVERAGE.name,help="Grayscale conversion method used")
+    parser.add_argument("--mode",choices=[choice.name for choice in Filter],default=Filter.LUMINANCE.name,help="Grayscale conversion method used")
     
     args = parser.parse_args()
 
@@ -201,7 +205,9 @@ def main():
     
     try:
         if args.input:
+           
             single_process(args.input, args.output, args.width,args.mode, method=args.method, web_view=args.web_view)
+         
         elif args.dir:
             out_dir = args.output if args.output else ASCII_DIRNAME
             multi_batch(args.dir, args.width, args.mode, out_dir, web_view=args.web_view, method=args.method)

@@ -6,7 +6,7 @@ from .implementations.mode_converter import cvt_scale
 def load_image(path,mode:Filter):
     img = Image.open(path).convert("RGB")
     ret=cvt_scale(img,mode)
-    ret.show()
+    
     return ret
 
 
