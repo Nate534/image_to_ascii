@@ -5,11 +5,15 @@ import time
 import webbrowser
 from pathlib import Path
 from PIL import Image, ImageOps
-from .image_processing import load_image
+from .custom_image_processing import load_image
 from .output import save_ascii
-from .implementations.base_converter import convert_image_to_ascii, convert_image_to_ascii_old
+from .implementations.base_converter import  convert_image_to_ascii_old
 from .implementations.cnn_converter import convert_image_to_ascii_cnn
+from .implementations.edged_converter import convert_image_to_ascii_outlined
 from .web_view import generate_gallery_html
+import time
+
+from .implementations.method import Filter
 
 ALLOWED_EXT=["jpeg","jpg","png","webp"]
 THUMBS_DIRNAME = "thumbnails"
@@ -36,7 +40,8 @@ def human_time(seconds: float):
         return f"{seconds*1000:.0f}ms"
     return f"{seconds:.2f}s"
 
-def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca", specific_files=None):
+def multi_batch(dir_path, width, mode:Filter,output_dir="ascii", web_view=False, method="pca", specific_files=None):
+
     dir_path = Path(dir_path)
     if not dir_path.is_dir():
         print_red(f"Input directory not found: {dir_path}")
@@ -74,11 +79,14 @@ def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca
 
         try:
             start = time.perf_counter()
-            img = load_image(str(entry))
+            img = load_image(str(entry),mode)
             if method == "cnn":
                 ascii_art = convert_image_to_ascii_cnn(img, width)
+            elif method == "edge":
+                ascii_art = convert_image_to_ascii_outlined(img,width)
             else:
                 ascii_art = convert_image_to_ascii_old(img, width)
+            
             # derive ascii dims
             lines = ascii_art.splitlines()
             aw = len(lines[0]) if lines else 0
@@ -125,7 +133,7 @@ def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca
         except Exception:
             print_green(f"\nGallery written to {html_path} (open manually)")
 
-def single_process(input_path, output_path, width, method="pca", web_view=False):
+def single_process(input_path, output_path, width, mode:Filter,method="pca",web_view=False):
     input_path = Path(input_path)
     if not input_path.is_file():
         print_red(f"Input file not found: {input_path}")
@@ -141,11 +149,16 @@ def single_process(input_path, output_path, width, method="pca", web_view=False)
 
     begin_ts = time.perf_counter()
     try:
-        img = load_image(str(input_path))
+        img = load_image(str(input_path),mode)
+       
         if method == "cnn":
             ascii_art = convert_image_to_ascii_cnn(img, width)
+
+        elif method=="edge":
+            ascii_art = convert_image_to_ascii_outlined(img,width)
         else:
             ascii_art = convert_image_to_ascii_old(img, width)
+        
         save_ascii(ascii_art, str(output_path))
         print_green(f"ASCII art saved to {output_path}")
 
@@ -183,7 +196,7 @@ def single_process(input_path, output_path, width, method="pca", web_view=False)
     end_ts = time.perf_counter()
     delta = end_ts - begin_ts
     timing = f"{delta:.2f}s" if delta >= 1 else f"{(delta*1000):.2f}ms"
-    print_green(f"{timing} taken to process 1 image", end="")
+    print_green(f"{timing} taken to process 1 image", end=" ")
 
 def main():
     parser = argparse.ArgumentParser(description='Convert image to ASCII art')
@@ -193,14 +206,17 @@ def main():
     parser.add_argument('--input-dir', help='Directory to read images from (used with --input)')
     parser.add_argument('--output', help='Output text file (for single image) or output directory (for batch)')
     parser.add_argument('--width', type=int, default=80, help='Width of ASCII art')
-    parser.add_argument('--method', choices=['pca', 'cnn'], default='pca', help='ASCII conversion method')
-    parser.add_argument("--web-view", action="store_true", help="Generate an HTML gallery and open it in a browser after batch processing")
+    parser.add_argument('--method', choices=['pca', 'cnn','edge'], default='pca', help='ASCII conversion method')
+    parser.add_argument("--web-view", action="store_true", help="Generate an HTML gallery and open it in a browser after batch processing (only for --dir)")
+    parser.add_argument("--mode",choices=[choice.name for choice in Filter],default=Filter.LUMINANCE.name,help="Grayscale conversion method used")
+    
     args = parser.parse_args()
 
     # Validate argument combinations
     if args.input_dir and args.dir:
         parser.error("--input-dir cannot be used with --dir (use --input in combination with --input-dir)")
 
+    
     try:
         if args.dir:
             # previous: --dir flag
@@ -242,6 +258,10 @@ def main():
     except Exception as e:
         print_red(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
+
+
+
+
 
 if __name__ == "__main__":
     main()

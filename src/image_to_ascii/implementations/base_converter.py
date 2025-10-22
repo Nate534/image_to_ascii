@@ -14,8 +14,10 @@ Example usage:
 """
 
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image
+from PIL import Image,ImageDraw
 from ..models.ascii_symbols import chars
+
 
 def get_char_pca(char, size=8):
     img = Image.new('L', (size, size), 255)
@@ -24,6 +26,61 @@ def get_char_pca(char, size=8):
     pixels = np.array(img)
     return compute_pca_features(pixels)
 
+def convert_image_to_ascii(img: Image.Image, width: int) -> str:
+    """
+    Template function for converting an image to ASCII art.
+    
+    Replace this with your own implementation!
+    
+    Args:
+        img: PIL Image object (grayscale)
+        width: Target width in characters
+        
+    Returns:
+        ASCII art as string
+        
+    Mathematical approach:
+        Describe your algorithm here, including:
+        - What mathematical concepts you use
+        - Any formulas or equations
+        - References to papers or resources
+        
+    Example:
+        For brightness-based conversion:
+        1. Calculate average brightness: avg = mean(pixel_values)
+        2. Map to character index: idx = int((avg / 255) * (len(chars) - 1))
+        3. Return corresponding character: chars[idx]
+    """
+    # Your implementation goes here
+    chars = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.', ' ']
+    
+    # Resize image maintaining aspect ratio
+    aspect = img.height / img.width
+    height = int(width * aspect / 2)
+    img = img.resize((width, height))
+    
+    # Convert to numpy array
+    pixels = np.array(img)
+    
+    # Example: Simple brightness mapping (replace with your algorithm)
+    ascii_lines = []
+    for y in range(height):
+        line = []
+        for x in range(width):
+            brightness = pixels[y, x]
+            char_index = int((brightness / 255.0) * (len(chars) - 1))
+            line.append(chars[char_index])
+        ascii_lines.append(''.join(line))
+    
+    return '\n'.join(ascii_lines)
+
+
+# Optional: Add any helper functions your algorithm needs
+def your_helper_function(data):
+    """
+    Document your helper functions too!
+    """
+    pass
 def compute_pca_features(image_block):
     flat = image_block.flatten().astype(np.float64)
     mean = np.mean(flat)
@@ -58,7 +115,12 @@ def select_symbol(block):
             best_char = char
     return best_char
 
-def convert_image_to_ascii(img, width):
+
+
+#sorry but i had to rename your function because it 
+# confilcts with the template given function
+
+def convert_image_to_ascii2(img, width):
     aspect = img.height / img.width
     height = int(width * aspect / 2)
     img_resized = img.resize((width, height)).convert('L')
@@ -71,19 +133,22 @@ def convert_image_to_ascii(img, width):
     return '\n'.join(ascii_art)
 
 def convert_image_to_ascii_old(img, width):
+    
     aspect = img.height / img.width
     height = int(width * aspect / 2)
     img = img.resize((width, height))
-
+    
     # Convert to numpy array
     pixels = np.array(img)
-
+   
     # Example: Simple brightness mapping (replace with your algorithm)
     ascii_lines = []
     for y in range(height):
         line = []
         for x in range(width):
+           
             brightness = pixels[y, x]
+           
             char_index = int((brightness / 255.0) * (len(chars) - 1))
             line.append(chars[char_index])
         ascii_lines.append(''.join(line))
