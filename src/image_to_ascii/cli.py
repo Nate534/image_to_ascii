@@ -5,13 +5,16 @@ import time
 import webbrowser
 from pathlib import Path
 from PIL import Image, ImageOps
-from .image_processing import load_image
+from .custom_image_processing import load_image
 from .output import save_ascii
 from .implementations.base_converter import  convert_image_to_ascii_old
 from .implementations.cnn_converter import convert_image_to_ascii_cnn
 from .implementations.edged_converter import convert_image_to_ascii_outlined
 from .web_view import generate_gallery_html
 import time
+
+from .implementations.method import Filter
+
 ALLOWED_EXT=["jpeg","jpg","png","webp"]
 THUMBS_DIRNAME = "thumbnails"
 ASCII_DIRNAME = "ascii"
@@ -37,7 +40,7 @@ def human_time(seconds: float):
         return f"{seconds*1000:.0f}ms"
     return f"{seconds:.2f}s"
 
-def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca"):
+def multi_batch(dir_path, width, mode:Filter,output_dir="ascii", web_view=False, method="pca"):
     dir_path = Path(dir_path)
     if not dir_path.is_dir():
         print_red(f"Input directory not found: {dir_path}")
@@ -63,7 +66,7 @@ def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca
 
         try:
             start = time.perf_counter()
-            img = load_image(str(entry))
+            img = load_image(str(entry),mode)
             if method == "cnn":
                 ascii_art = convert_image_to_ascii_cnn(img, width)
             elif method == "edge":
@@ -117,7 +120,7 @@ def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca
         except Exception:
             print_green(f"\nGallery written to {html_path} (open manually)")
 
-def single_process(input_path, output_path, width, method="pca", web_view=False):
+def single_process(input_path, output_path, width, mode:Filter,method="pca",web_view=False):
     input_path = Path(input_path)
     if not input_path.is_file():
         print_red(f"Input file not found: {input_path}")
@@ -133,7 +136,8 @@ def single_process(input_path, output_path, width, method="pca", web_view=False)
 
     begin_ts = time.perf_counter()
     try:
-        img = load_image(str(input_path))
+        img = load_image(str(input_path),mode)
+        
         if method == "cnn":
             ascii_art = convert_image_to_ascii_cnn(img, width)
         else:
@@ -175,7 +179,7 @@ def single_process(input_path, output_path, width, method="pca", web_view=False)
     end_ts = time.perf_counter()
     delta = end_ts - begin_ts
     timing = f"{delta:.2f}s" if delta >= 1 else f"{(delta*1000):.2f}ms"
-    print_green(f"{timing} taken to process 1 image", end="")
+    print_green(f"{timing} taken to process 1 image", end=" ")
 
 def main():
     parser = argparse.ArgumentParser(description='Convert image to ASCII art')
@@ -186,21 +190,28 @@ def main():
     parser.add_argument('--width', type=int, default=80, help='Width of ASCII art')
     parser.add_argument('--method', choices=['pca', 'cnn','edge'], default='pca', help='ASCII conversion method')
     parser.add_argument("--web-view", action="store_true", help="Generate an HTML gallery and open it in a browser after batch processing (only for --dir)")
+    parser.add_argument("--mode",choices=[choice.name for choice in Filter],default=Filter.AVERAGE.name,help="Grayscale conversion method used")
+    
     args = parser.parse_args()
 
     # Validate that --output is provided when using --input
     if args.input and not args.output:
         parser.error("--output is required when using --input")
 
+    
     try:
         if args.input:
-            single_process(args.input, args.output, args.width, method=args.method, web_view=args.web_view)
+            single_process(args.input, args.output, args.width,args.mode, method=args.method, web_view=args.web_view)
         elif args.dir:
             out_dir = args.output if args.output else ASCII_DIRNAME
-            multi_batch(args.dir, args.width, out_dir, web_view=args.web_view, method=args.method)
+            multi_batch(args.dir, args.width, args.mode, out_dir, web_view=args.web_view, method=args.method)
     except Exception as e:
         print_red(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
+
+
+
+
 
 if __name__ == "__main__":
     main()
