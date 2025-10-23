@@ -186,6 +186,7 @@ def single_process(input_path, output_path, width, method="pca", web_view=False)
     print_green(f"{timing} taken to process 1 image", end="")
 
 def main():
+    """Command-line interface for image-to-ASCII conversion."""
     parser = argparse.ArgumentParser(description='Convert image to ASCII art')
     input_group=parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument('--input', help='Comma-separated list of image filenames or "all" to process all images')
