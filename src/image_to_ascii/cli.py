@@ -2,52 +2,41 @@ import argparse
 import sys
 import os
 import time
+import webbrowser
+from pathlib import Path
+from PIL import Image, ImageOps
 from .image_processing import load_image
 from .output import save_ascii
-from .implementations.base_converter import convert_image_to_ascii
+from .implementations.base_converter import convert_image_to_ascii, convert_image_to_ascii_old
 from .implementations.cnn_converter import convert_image_to_ascii_cnn
-from .implementations.ea_converter import convert_image_to_ascii_ea  # <- added EA converter
 from .web_view import generate_gallery_html
 
-ALLOWED_EXT = ["jpeg", "jpg", "png", "webp"]
+ALLOWED_EXT=["jpeg","jpg","png","webp"]
 THUMBS_DIRNAME = "thumbnails"
 ASCII_DIRNAME = "ascii"
 
+def print_green(data,end="\n",file=sys.stdout):
+    print(f"\033[92m{data}\033[00m",end=end,file=file)
 
-def print_green(data, end="\n", file=sys.stdout):
-    """Print text in green color to the console."""
-    print(f"\033[92m{data}\033[00m", end=end, file=file)
-
-
-def print_red(data, end="\n", file=sys.stdout):
-    """Print text in red color to the console."""
-    print(f"\033[91m{data}\033[00m", end=end, file=file)
-
+def print_red(data,end="\n",file=sys.stdout):
+    print(f"\033[91m{data}\033[00m",end=end,file=file)
 
 def safe_filename(st: str):
-    """Sanitize a string to create a safe filename."""
     return "".join(c if c.isalnum() or c in "._-" else "_" for c in st)
 
-
 def make_thumbnail(img_path: str, thumb_path: str, max_size=(240, 240)):
-    """Create a thumbnail for an image and save it."""
     with Image.open(img_path) as im:
         im = ImageOps.exif_transpose(im)
         im.thumbnail(max_size, Image.LANCZOS)
         rgb = im.convert("RGB")
         rgb.save(thumb_path, format="JPEG", quality=85)
 
-
 def human_time(seconds: float):
-    """Format elapsed time in seconds or milliseconds."""
     if seconds < 1.0:
         return f"{seconds*1000:.0f}ms"
     return f"{seconds:.2f}s"
 
-
-def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca", specific_files=None,
-                pop_size=30, generations=20, mutation=0.1):
-    """Process multiple images in a directory and convert them to ASCII art."""
+def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca", specific_files=None):
     dir_path = Path(dir_path)
     if not dir_path.is_dir():
         print_red(f"Input directory not found: {dir_path}")
@@ -59,7 +48,7 @@ def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca
     ascii_out.mkdir(parents=True, exist_ok=True)
     thumbs_out.mkdir(parents=True, exist_ok=True)
 
-    # Filter entries based on specific_files if provided
+    # Filter entries based on specific_files if provided in command
     if specific_files:
         entries = []
         for filename in specific_files:
@@ -71,7 +60,7 @@ def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca
         entries = sorted(entries)
     else:
         entries = sorted(dir_path.iterdir())
-
+    
     processed = 0
     begin_ts = time.perf_counter()
     gallery_items = []
@@ -88,15 +77,9 @@ def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca
             img = load_image(str(entry))
             if method == "cnn":
                 ascii_art = convert_image_to_ascii_cnn(img, width)
-            elif method == "ea":
-                ascii_art = convert_image_to_ascii_ea(img, width,
-                                                      population_size=pop_size,
-                                                      generations=generations,
-                                                      mutation_rate=mutation)
             else:
                 ascii_art = convert_image_to_ascii_old(img, width)
-
-            # derive ascii dimensions
+            # derive ascii dims
             lines = ascii_art.splitlines()
             aw = len(lines[0]) if lines else 0
             ah = len(lines)
@@ -142,10 +125,7 @@ def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca
         except Exception:
             print_green(f"\nGallery written to {html_path} (open manually)")
 
-
-def single_process(input_path, output_path, width, method="pca", web_view=False,
-                   pop_size=30, generations=20, mutation=0.1):
-    """Process a single image and convert it to ASCII art."""
+def single_process(input_path, output_path, width, method="pca", web_view=False):
     input_path = Path(input_path)
     if not input_path.is_file():
         print_red(f"Input file not found: {input_path}")
@@ -164,11 +144,6 @@ def single_process(input_path, output_path, width, method="pca", web_view=False,
         img = load_image(str(input_path))
         if method == "cnn":
             ascii_art = convert_image_to_ascii_cnn(img, width)
-        elif method == "ea":
-            ascii_art = convert_image_to_ascii_ea(img, width,
-                                                  population_size=pop_size,
-                                                  generations=generations,
-                                                  mutation_rate=mutation)
         else:
             ascii_art = convert_image_to_ascii_old(img, width)
         save_ascii(ascii_art, str(output_path))
@@ -210,24 +185,17 @@ def single_process(input_path, output_path, width, method="pca", web_view=False,
     timing = f"{delta:.2f}s" if delta >= 1 else f"{(delta*1000):.2f}ms"
     print_green(f"{timing} taken to process 1 image", end="")
 
-
 def main():
     """Command-line interface for image-to-ASCII conversion."""
     parser = argparse.ArgumentParser(description='Convert image to ASCII art')
-    input_group = parser.add_mutually_exclusive_group(required=True)
+    input_group=parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument('--input', help='Comma-separated list of image filenames or "all" to process all images')
     input_group.add_argument('--dir', help='Input folder path containing images')
     parser.add_argument('--input-dir', help='Directory to read images from (used with --input)')
     parser.add_argument('--output', help='Output text file (for single image) or output directory (for batch)')
     parser.add_argument('--width', type=int, default=80, help='Width of ASCII art')
-    parser.add_argument('--method', choices=['pca', 'cnn', 'ea'], default='pca', help='ASCII conversion method')
+    parser.add_argument('--method', choices=['pca', 'cnn'], default='pca', help='ASCII conversion method')
     parser.add_argument("--web-view", action="store_true", help="Generate an HTML gallery and open it in a browser after batch processing")
-
-    # Optional EA parameters
-    parser.add_argument('--pop-size', type=int, default=30, help='Population size for EA')
-    parser.add_argument('--generations', type=int, default=20, help='Number of generations for EA')
-    parser.add_argument('--mutation', type=float, default=0.1, help='Mutation rate for EA')
-
     args = parser.parse_args()
 
     # Validate argument combinations
@@ -236,55 +204,45 @@ def main():
 
     try:
         if args.dir:
+            # previous: --dir flag
             out_dir = args.output if args.output else ASCII_DIRNAME
-            multi_batch(args.dir, args.width, out_dir, web_view=args.web_view,
-                        method=args.method,
-                        pop_size=args.pop_size,
-                        generations=args.generations,
-                        mutation=args.mutation)
+            multi_batch(args.dir, args.width, out_dir, web_view=args.web_view, method=args.method)
         elif args.input:
+            # new: --input flag
             input_dir = args.input_dir if args.input_dir else "."
             input_dir = Path(input_dir)
-
+            
             if not input_dir.is_dir():
                 print_red(f"Input directory not found: {input_dir}")
                 sys.exit(1)
-
+            
             if args.input.lower() == "all":
+                # Process all images in the directory
                 out_dir = args.output if args.output else ASCII_DIRNAME
-                multi_batch(str(input_dir), args.width, out_dir, web_view=args.web_view,
-                            method=args.method,
-                            pop_size=args.pop_size,
-                            generations=args.generations,
-                            mutation=args.mutation)
+                multi_batch(str(input_dir), args.width, out_dir, web_view=args.web_view, method=args.method)
             else:
+                # Parsing comma separated filenames
                 filenames = [f.strip() for f in args.input.split(',') if f.strip()]
-
+                
                 if not filenames:
                     print_red("No valid filenames provided (use comma separated filenames)")
                     sys.exit(1)
-
+                
+                # Checking if single file or multiple files
                 if len(filenames) == 1:
+                    # Single file
                     if not args.output:
                         parser.error("--output is required when processing a single image")
+                    
                     input_path = input_dir / filenames[0]
-                    single_process(str(input_path), args.output, args.width, method=args.method,
-                                   web_view=args.web_view,
-                                   pop_size=args.pop_size,
-                                   generations=args.generations,
-                                   mutation=args.mutation)
+                    single_process(str(input_path), args.output, args.width, method=args.method, web_view=args.web_view)
                 else:
+                    # Batch mode with specific files
                     out_dir = args.output if args.output else ASCII_DIRNAME
-                    multi_batch(str(input_dir), args.width, out_dir, web_view=args.web_view,
-                                method=args.method,
-                                specific_files=filenames,
-                                pop_size=args.pop_size,
-                                generations=args.generations,
-                                mutation=args.mutation)
+                    multi_batch(str(input_dir), args.width, out_dir, web_view=args.web_view, method=args.method, specific_files=filenames)
     except Exception as e:
-        print_red(f'Error: {e}')
+        print_red(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()
