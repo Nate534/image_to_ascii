@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>ASCII Stream</title>
+<style>
+body{
+  margin:0;
+  color:#dfdfdf;
+
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color:rgb(31, 31, 31);
+  font-family:monospace}
+pre{
+  margin:0;
+  white-space:pre;
+  width: 80vw; 
+  font-size:10px;
+  line-height:10px}
+</style>
+</head>
+<body ><pre id="out">Connecting...</pre>
+<script>
+let addr = prompt("socket addr:","ws://20.20.23.199:5555")
+let rows=[],out=document.getElementById("out")
+const ws=new WebSocket(addr)
+ws.onmessage=e=>{
+  const m=JSON.parse(e.data)
+  if(m.type==="full"){rows=m.frame.split("\n");out.textContent=m.frame}
+  if(m.type==="patch"){for(const c of m.changes){rows[c.row]=c.line}
+    out.textContent=rows.join("\n")}
+}
+</script></body></html>
