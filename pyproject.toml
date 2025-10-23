@@ -13,6 +13,7 @@ dependencies = [
     "Pillow>=8.0.0",
     "numpy>=1.20.0",
     "opencv-python>=4.11.0.86",
+    "pathlib>=1.0.1",
     "torch>=2.5.1",
     "websockets>=13.1",
 ]
@@ -51,3 +52,8 @@ dev = [
 [build-system]
 requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+]
