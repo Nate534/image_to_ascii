@@ -13,6 +13,7 @@ from ..models.ascii_symbols import chars
 
 PATCH_SIZE = 8
 
+
 def convert_image_to_ascii_cnn(img, width, model_path=None):
     """
     Convert a grayscale image to ASCII using CNN model inference.
@@ -23,7 +24,7 @@ def convert_image_to_ascii_cnn(img, width, model_path=None):
     # Resize image proportionally
     aspect = img.height / img.width
     height = int(width * aspect / PATCH_SIZE) * PATCH_SIZE
-    img_resized = img.resize((width * PATCH_SIZE, height)).convert('L')
+    img_resized = img.resize((width * PATCH_SIZE, height)).convert("L")
 
     pixels = np.array(img_resized)
     ascii_art = []
@@ -31,14 +32,17 @@ def convert_image_to_ascii_cnn(img, width, model_path=None):
     for y in range(0, pixels.shape[0], PATCH_SIZE):
         line = ""
         for x in range(0, pixels.shape[1], PATCH_SIZE):
-            patch = pixels[y:y+PATCH_SIZE, x:x+PATCH_SIZE]
+            patch = pixels[y : y + PATCH_SIZE, x : x + PATCH_SIZE]
 
             if patch.shape != (PATCH_SIZE, PATCH_SIZE):
                 temp = np.ones((PATCH_SIZE, PATCH_SIZE)) * 255
-                temp[:patch.shape[0], :patch.shape[1]] = patch
+                temp[: patch.shape[0], : patch.shape[1]] = patch
                 patch = temp
 
-            tensor_patch = torch.tensor(patch, dtype=torch.float32).unsqueeze(0).unsqueeze(0) / 255.0
+            tensor_patch = (
+                torch.tensor(patch, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+                / 255.0
+            )
 
             with torch.no_grad():
                 output = model(tensor_patch)
