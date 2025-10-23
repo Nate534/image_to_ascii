@@ -141,14 +141,15 @@ async def producer():
 async def handler(ws):
     clients.add(ws)
     try:
-        async for _ in ws: pass
+        async for _ in ws:
+            pass
     finally:
         clients.remove(ws)
 
-async def main():
+async def run_server():
     async with websockets.serve(handler,HOST,PORT):
         print(f"Streaming ASCII video on ws://{HOST}:{PORT}")
         await producer()
 
 if __name__=="__main__":
-    asyncio.run(main())
+    asyncio.run(run_server())

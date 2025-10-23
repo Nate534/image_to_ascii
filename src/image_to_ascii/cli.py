@@ -11,9 +11,12 @@ from .implementations.base_converter import  convert_image_to_ascii_old
 from .implementations.cnn_converter import convert_image_to_ascii_cnn
 from .implementations.edged_converter import convert_image_to_ascii_outlined
 from .web_view import generate_gallery_html
+from .implementations.network.streamer import run_server
 import time
 
 from .implementations.method import Filter
+from .implementations.network.streamer import run_server
+import asyncio
 
 ALLOWED_EXT=["jpeg","jpg","png","webp"]
 THUMBS_DIRNAME = "thumbnails"
@@ -40,7 +43,7 @@ def human_time(seconds: float):
         return f"{seconds*1000:.0f}ms"
     return f"{seconds:.2f}s"
 
-def multi_batch(dir_path, width, mode:Filter,output_dir="ascii", web_view=False, method="pca", specific_files=None):
+def multi_batch(dir_path, width, mode:Filter=Filter.LUMINANCE,output_dir="ascii", web_view=False, method="pca", specific_files=None):
 
     dir_path = Path(dir_path)
     if not dir_path.is_dir():
@@ -133,7 +136,7 @@ def multi_batch(dir_path, width, mode:Filter,output_dir="ascii", web_view=False,
         except Exception:
             print_green(f"\nGallery written to {html_path} (open manually)")
 
-def single_process(input_path, output_path, width, mode:Filter,method="pca",web_view=False):
+def single_process(input_path, output_path, width, mode:Filter=Filter.LUMINANCE,method="pca",web_view=False):
     input_path = Path(input_path)
     if not input_path.is_file():
         print_red(f"Input file not found: {input_path}")
@@ -209,14 +212,22 @@ def main():
     parser.add_argument('--method', choices=['pca', 'cnn','edge'], default='pca', help='ASCII conversion method')
     parser.add_argument("--web-view", action="store_true", help="Generate an HTML gallery and open it in a browser after batch processing (only for --dir)")
     parser.add_argument("--mode",choices=[choice.name for choice in Filter],default=Filter.LUMINANCE.name,help="Grayscale conversion method used")
+    parser.add_argument("--web-stream", action="store_true", help="stream the webcam to ascii over websocket")
     
     args = parser.parse_args()
-
+    
     # Validate argument combinations
     if args.input_dir and args.dir:
         parser.error("--input-dir cannot be used with --dir (use --input in combination with --input-dir)")
 
-    
+    elif args.web_stream:
+        try:
+            print("... starting ")
+            asyncio.run(run_server())
+        except KeyboardInterrupt:
+            print("Closing Stream Server...")
+            return
+
     try:
         if args.dir:
             # previous: --dir flag
