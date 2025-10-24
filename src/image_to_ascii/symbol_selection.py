@@ -6,4 +6,4 @@ This module imports and uses the PCA converter from the implementations director
 
 from .implementations.pca_converter import select_symbol
 
-__all__ = ['select_symbol']
+__all__ = ["select_symbol"]

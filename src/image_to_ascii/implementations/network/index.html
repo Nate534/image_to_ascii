@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>ASCII Stream</title>
+<style>
+body{
+  margin:0;
+  color:#dfdfdf;
+
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color:rgb(31, 31, 31);
+  font-family:monospace}
+pre{
+  margin:0;
+  white-space:pre;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 90vw; 
+  font-size:10px;
+  line-height:10px}
+</style>
+</head>
+<body >
+  <h1>Ascii Web Streamer</h1>
+  <pre id="out">Connecting...</pre>
+<script>
+let addr = prompt("socket addr:","ws://localhost:5555")
+let rows=[],out=document.getElementById("out")
+const ws=new WebSocket(addr)
+ws.onmessage=e=>{
+
+  
+  out.textContent=e.data
+}
+</script></body></html>
