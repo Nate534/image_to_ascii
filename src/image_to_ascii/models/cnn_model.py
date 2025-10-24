@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import os
 from .ascii_symbols import chars
 
+
 class ASCIIConvNet(nn.Module):
     def __init__(self, num_classes: int = len(chars)):
         super().__init__()
@@ -29,8 +30,10 @@ class ASCIIConvNet(nn.Module):
 
 # Helper functions
 
+
 def create_model():
     return ASCIIConvNet()
+
 
 def train_model(save_path: str = None):
     model = ASCIIConvNet()
@@ -38,14 +41,15 @@ def train_model(save_path: str = None):
         torch.save(model.state_dict(), save_path)
     return model
 
+
 def load_model(model_path=None):
     """
     Returns a CNN model instance.
     Currently, this is a placeholder that returns an untrained model.
     """
     model = ASCIIConvNet()
-    
+
     if model_path is not None:
-        model.load_state_dict(torch.load(model_path, map_location='cpu'))
+        model.load_state_dict(torch.load(model_path, map_location="cpu"))
     model.eval()
     return model
