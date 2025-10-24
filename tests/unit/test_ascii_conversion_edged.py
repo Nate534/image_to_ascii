@@ -1,5 +1,7 @@
 from PIL import Image
-from image_to_ascii.implementations.edged_converter import convert_image_to_ascii_outlined
+from image_to_ascii.implementations.edged_converter import (
+    convert_image_to_ascii_outlined,
+)
 
 
 def test_image_to_ascii():
