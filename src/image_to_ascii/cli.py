@@ -36,7 +36,8 @@ def human_time(seconds: float):
         return f"{seconds*1000:.0f}ms"
     return f"{seconds:.2f}s"
 
-def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca", specific_files=None):
+def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca", specific_files=None, enhance=False):
+    
     dir_path = Path(dir_path)
     if not dir_path.is_dir():
         print_red(f"Input directory not found: {dir_path}")
@@ -74,7 +75,7 @@ def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca
 
         try:
             start = time.perf_counter()
-            img = load_image(str(entry))
+            img = load_image(str(entry), enhance=args.enhance)
             if method == "cnn":
                 ascii_art = convert_image_to_ascii_cnn(img, width)
             else:
@@ -125,7 +126,7 @@ def multi_batch(dir_path, width, output_dir="ascii", web_view=False, method="pca
         except Exception:
             print_green(f"\nGallery written to {html_path} (open manually)")
 
-def single_process(input_path, output_path, width, method="pca", web_view=False):
+def single_process(input_path, output_path, width, method="pca", web_view=False, enhance=False):
     input_path = Path(input_path)
     if not input_path.is_file():
         print_red(f"Input file not found: {input_path}")
@@ -141,7 +142,8 @@ def single_process(input_path, output_path, width, method="pca", web_view=False)
 
     begin_ts = time.perf_counter()
     try:
-        img = load_image(str(input_path))
+        img = load_image(str(input_path), enhance=enhance)
+
         if method == "cnn":
             ascii_art = convert_image_to_ascii_cnn(img, width)
         else:
@@ -196,6 +198,7 @@ def main():
     parser.add_argument('--width', type=int, default=80, help='Width of ASCII art')
     parser.add_argument('--method', choices=['pca', 'cnn'], default='pca', help='ASCII conversion method')
     parser.add_argument("--web-view", action="store_true", help="Generate an HTML gallery and open it in a browser after batch processing")
+    parser.add_argument("--enhance", action="store_true", help="Apply contrast enhancement before ASCII conversion")
     args = parser.parse_args()
 
     # Validate argument combinations
@@ -206,7 +209,7 @@ def main():
         if args.dir:
             # previous: --dir flag
             out_dir = args.output if args.output else ASCII_DIRNAME
-            multi_batch(args.dir, args.width, out_dir, web_view=args.web_view, method=args.method)
+            multi_batch(args.dir, args.width, out_dir, web_view=args.web_view, method=args.method, enhance=args.enhance)
         elif args.input:
             # new: --input flag
             input_dir = args.input_dir if args.input_dir else "."
@@ -219,7 +222,7 @@ def main():
             if args.input.lower() == "all":
                 # Process all images in the directory
                 out_dir = args.output if args.output else ASCII_DIRNAME
-                multi_batch(str(input_dir), args.width, out_dir, web_view=args.web_view, method=args.method)
+                multi_batch(str(input_dir), args.width, out_dir, web_view=args.web_view, method=args.method, enhance=args.enhance)
             else:
                 # Parsing comma separated filenames
                 filenames = [f.strip() for f in args.input.split(',') if f.strip()]
@@ -235,11 +238,11 @@ def main():
                         parser.error("--output is required when processing a single image")
                     
                     input_path = input_dir / filenames[0]
-                    single_process(str(input_path), args.output, args.width, method=args.method, web_view=args.web_view)
+                    single_process(str(input_path), args.output, args.width, method=args.method, web_view=args.web_view, enhance=args.enhance)
                 else:
                     # Batch mode with specific files
                     out_dir = args.output if args.output else ASCII_DIRNAME
-                    multi_batch(str(input_dir), args.width, out_dir, web_view=args.web_view, method=args.method, specific_files=filenames)
+                    multi_batch(str(input_dir), args.width, out_dir, web_view=args.web_view, method=args.method, specific_files=filenames, enhance=args.enhance)
     except Exception as e:
         print_red(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
