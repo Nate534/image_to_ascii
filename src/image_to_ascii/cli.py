@@ -10,6 +10,7 @@ from .output import save_ascii
 from .implementations.base_converter import convert_image_to_ascii, convert_image_to_ascii_old
 from .implementations.cnn_converter import convert_image_to_ascii_cnn
 from .web_view import generate_gallery_html
+from .implementations.multi_scale_converter import convert_image_to_ascii_MultiScale
 
 ALLOWED_EXT=["jpeg","jpg","png","webp"]
 THUMBS_DIRNAME = "thumbnails"
@@ -185,6 +186,44 @@ def single_process(input_path, output_path, width, method="pca", web_view=False)
     timing = f"{delta:.2f}s" if delta >= 1 else f"{(delta*1000):.2f}ms"
     print_green(f"{timing} taken to process 1 image", end="")
 
+
+def single_process_multi_res(input_path):
+    input_path = Path(input_path)
+    if not input_path.is_file():
+        print_red(f"Input file not found: {input_path}")
+        return
+
+    ext = input_path.suffix.lower().lstrip(".")
+    if ext not in ALLOWED_EXT:
+        print_red(f"Unsupported file extension: .{ext}")
+        return
+
+    
+
+    begin_ts = time.perf_counter()
+    output_path="ascii/"
+    try:
+        img = load_image(str(input_path))
+        all_res=convert_image_to_ascii_MultiScale(img)
+       
+        len(all_res.keys())
+        for res in all_res:
+            f=f"{res}.txt"
+            p=f"{output_path}{res}-res/{f}"
+            o_path = Path(p)
+            o_path.parent.mkdir(parents=True, exist_ok=True)
+            save_ascii(all_res[res], str(o_path))
+        
+
+    except Exception as e:
+        print_red(f"Failed to process {input_path.name} : {e}")
+    end_ts = time.perf_counter()
+    delta = end_ts - begin_ts
+    timing = f"{delta:.2f}s" if delta >= 1 else f"{(delta*1000):.2f}ms"
+    print_green(f"{timing} taken to process {len(all_res.keys())} image", end="")
+
+
+
 def main():
     parser = argparse.ArgumentParser(description='Convert image to ASCII art')
     input_group=parser.add_mutually_exclusive_group(required=True)
@@ -194,8 +233,13 @@ def main():
     parser.add_argument('--output', help='Output text file (for single image) or output directory (for batch)')
     parser.add_argument('--width', type=int, default=80, help='Width of ASCII art')
     parser.add_argument('--method', choices=['pca', 'cnn'], default='pca', help='ASCII conversion method')
+    parser.add_argument("--multiscale", action="store_true", help="Generate Multi Resolution version of the image")
     parser.add_argument("--web-view", action="store_true", help="Generate an HTML gallery and open it in a browser after batch processing")
     args = parser.parse_args()
+
+   
+    if args.multiscale:
+        single_process_multi_res(args.input)
 
     # Validate argument combinations
     if args.input_dir and args.dir:
