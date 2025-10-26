@@ -187,7 +187,7 @@ def single_process(input_path, output_path, width, method="pca", web_view=False)
     print_green(f"{timing} taken to process 1 image", end="")
 
 
-def single_process_multi_res(input_path, output_path):
+def single_process_multi_res(input_path):
     input_path = Path(input_path)
     if not input_path.is_file():
         print_red(f"Input file not found: {input_path}")
@@ -201,21 +201,26 @@ def single_process_multi_res(input_path, output_path):
     
 
     begin_ts = time.perf_counter()
+    output_path="ascii/"
     try:
         img = load_image(str(input_path))
         all_res=convert_image_to_ascii_MultiScale(img)
+       
+        len(all_res.keys())
         for res in all_res:
-            p=output_path/res
-            output_path = Path(p)
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            save_ascii(all_res[res], str(output_path))
-        print_green(f"ASCII art saved to {output_path}")
+            f=f"{res}.txt"
+            p=f"{output_path}{res}-res/{f}"
+            o_path = Path(p)
+            o_path.parent.mkdir(parents=True, exist_ok=True)
+            save_ascii(all_res[res], str(o_path))
+        
+
     except Exception as e:
         print_red(f"Failed to process {input_path.name} : {e}")
     end_ts = time.perf_counter()
     delta = end_ts - begin_ts
     timing = f"{delta:.2f}s" if delta >= 1 else f"{(delta*1000):.2f}ms"
-    print_green(f"{timing} taken to process 1 image", end="")
+    print_green(f"{timing} taken to process {len(all_res.keys())} image", end="")
 
 
 
@@ -234,7 +239,7 @@ def main():
 
    
     if args.multiscale:
-        single_process_multi_res(args.input,args.output)
+        single_process_multi_res(args.input)
 
     # Validate argument combinations
     if args.input_dir and args.dir:
